@@ -113,6 +113,25 @@ client := circuit.NewHTTPClient(time.Second * 5, 10, nil)
 resp, err := client.Get("http://example.com/resource.json")
 ```
 
+### New Feat
+
+Circuitbreaker support execute fallback() func when the breaker is tripped
+
+```go
+cb := circuit.NewThresholdBreaker(10)
+
+fallback := func() error {
+    // This is where you'll do the fallback call
+}
+
+// when the breaker is tripped, the fallback() func will be execute instead
+cb.CallWithFallback(func() error {
+  // This is where you'll do some remote call
+  // If it fails, return an error
+}, fallback, 0)
+
+```
+
 See the godoc for more examples.
 
 ## Bugs, Issues, Feedback

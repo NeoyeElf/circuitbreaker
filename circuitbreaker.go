@@ -334,14 +334,28 @@ func (cb *Breaker) Call(circuit func() error, timeout time.Duration) error {
 	return cb.CallContext(context.Background(), circuit, timeout)
 }
 
+// CallWithFallback execute the fallback func instead of return ErrBreakerOpen when breaker is not ready
+func (cb *Breaker) CallWithFallback(ctx context.Context, circuit func() error, fallback func() error,
+	timeout time.Duration) error {
+	if !cb.Ready() {
+		return fallback()
+	}
+
+	return cb.doCall(ctx, circuit, timeout)
+}
+
 // CallContext is same as Call but if the ctx is canceled after the circuit returned an error,
 // the error will not be marked as a failure because the call was canceled intentionally.
 func (cb *Breaker) CallContext(ctx context.Context, circuit func() error, timeout time.Duration) error {
-	var err error
-
 	if !cb.Ready() {
 		return ErrBreakerOpen
 	}
+
+	return cb.doCall(ctx, circuit, timeout)
+}
+
+func (cb *Breaker) doCall(ctx context.Context, circuit func() error, timeout time.Duration) error {
+	var err error
 
 	if timeout == 0 {
 		err = circuit()
